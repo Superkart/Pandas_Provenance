@@ -150,5 +150,4 @@ venv/
 .vscode/
 
 # Ignore the requirements.txt file if it was generated (optional)
-requirements.txt
 
