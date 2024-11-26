@@ -1,5 +1,5 @@
 import pandas as pd
-from provenance_tracker import ProvenanceTracker
+from provenance.provenance_tracker import ProvenanceTracker
 
 def test_provenance_logging():
     tracker = ProvenanceTracker()
