@@ -1,11 +1,12 @@
 import hashlib
 
-def hash_table(dataframe):
-    """Generate a hash for the content and schema of a DataFrame."""
-    content_string = dataframe.to_csv(index=False)
-    return hashlib.md5(content_string.encode()).hexdigest()
 
-def generate_table_name(input_tables, operation):
-    """Generate a deterministic name for a derived table."""
-    name = f"{operation}_" + "_".join(input_tables)
-    return hashlib.md5(name.encode()).hexdigest()
+def hash_table(dataframe):
+    """Generates a hash for a DataFrame's content and columns."""
+    table_bytes = dataframe.to_csv(index=False).encode()
+    return hashlib.md5(table_bytes).hexdigest()
+
+
+def generate_table_name(dataframe):
+    """Creates a deterministic name for a DataFrame based on its hash."""
+    return f"table_{hash_table(dataframe)}"
