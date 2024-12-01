@@ -1,19 +1,40 @@
-import unittest
+import pytest
 import pandas as pd
 from provenance.provenance_tracker import ProvenanceTracker
 
-class TestProvenanceTracker(unittest.TestCase):
-    def setUp(self):
-        self.tracker = ProvenanceTracker(log_file="test_log.json")
-        self.df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
 
-    def test_read_csv(self):
-        df, _ = self.tracker.track_table(self.df, operation="test_operation")
-        self.assertEqual(len(self.tracker.logs), 1)
 
-    def tearDown(self):
-        import os
-        os.remove("test_log.json")
+def test_read_csv(sample_csv):
+    tracker = ProvenanceTracker()
+    df, table_name = tracker.read_csv(sample_csv)
+    
+    # Check if provenance logs have been updated
+    with open("./Pandas_Provenance_Project/provenance/provenance_log.json", "r") as f:
+        logs = f.read()
+    assert "read_csv" in logs
+    assert table_name in logs
 
-if __name__ == "__main__":
-    unittest.main()
+
+def test_filter_operation(sample_csv):
+    tracker = ProvenanceTracker()
+    df, table_name = tracker.read_csv(sample_csv)
+    filtered_df, filtered_table_name = tracker.filter(df, "Name=='Red'")
+    
+    # Check if provenance logs have been updated
+    with open("./Pandas_Provenance_Project/provenance/provenance_log.json", "r") as f:
+        logs = f.read()
+    assert "filter" in logs
+    assert filtered_table_name in logs
+
+
+def test_drop_columns_operation(sample_csv):
+    tracker = ProvenanceTracker()
+    df, table_name = tracker.read_csv(sample_csv)
+    dropped_df, dropped_table_name = tracker.drop_columns(df, ["HEX"])
+    
+    # Check if provenance logs have been updated
+    with open("./Pandas_Provenance_Project/provenance/provenance_log.json", "r") as f:
+        logs = f.read()
+    assert "drop_columns" in logs
+    assert dropped_table_name in logs
+

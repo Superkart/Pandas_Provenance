@@ -2,8 +2,9 @@ import pandas as pd
 import json
 from .table_utils import calculate_hash, generate_table_name
 
+
 class ProvenanceTracker:
-    def __init__(self, log_file="provenance_log.json"):
+    def __init__(self, log_file="./Pandas_Provenance_Project/provenance/provenance_log.json"):
         self.log_file = log_file
         self.logs = []
         self.load_logs()
@@ -15,6 +16,8 @@ class ProvenanceTracker:
                 self.logs = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             self.logs = []
+            with open(self.log_file, "w"):
+                pass
 
     def save_logs(self):
         """Save logs to the JSON file."""
@@ -42,3 +45,18 @@ class ProvenanceTracker:
         """Read a CSV file and track its provenance."""
         df = pd.read_csv(filepath)
         return self.track_table(df, source_file=filepath, operation="read_csv")
+
+    def filter(self, df, condition):
+        """Track a filter operation."""
+        df_filtered = df.query(condition)  # Apply filter
+        return self.track_table(df_filtered, operation="filter", conditions=condition)
+
+    def drop_columns(self, df, columns_to_drop):
+        """Track a column drop operation."""
+        df_dropped = df.drop(columns=columns_to_drop)
+        return self.track_table(df_dropped, operation="drop_columns", conditions=f"columns_to_drop: {columns_to_drop}")
+
+    def merge(self, df1, df2, how="inner", on=None):
+        """Track a merge operation."""
+        df_merged = df1.merge(df2, how=how, on=on)
+        return self.track_table(df_merged, operation="merge", conditions=f"how: {how}, on: {on}")
