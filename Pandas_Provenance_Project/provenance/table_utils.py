@@ -1,12 +1,10 @@
 import hashlib
 
+def calculate_hash(df):
+    """Calculate a hash for a DataFrame's content."""
+    data_string = df.to_csv(index=False).encode()
+    return hashlib.sha256(data_string).hexdigest()
 
-def hash_table(dataframe):
-    """Generates a hash for a DataFrame's content and columns."""
-    table_bytes = dataframe.to_csv(index=False).encode()
-    return hashlib.md5(table_bytes).hexdigest()
-
-
-def generate_table_name(dataframe):
-    """Creates a deterministic name for a DataFrame based on its hash."""
-    return f"table_{hash_table(dataframe)}"
+def generate_table_name(table_hash):
+    """Generate a deterministic table name based on its hash."""
+    return f"table_{table_hash[:8]}"

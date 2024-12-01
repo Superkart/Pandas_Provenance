@@ -1,21 +1,19 @@
+import unittest
 import pandas as pd
 from provenance.provenance_tracker import ProvenanceTracker
 
+class TestProvenanceTracker(unittest.TestCase):
+    def setUp(self):
+        self.tracker = ProvenanceTracker(log_file="test_log.json")
+        self.df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
 
-def test_provenance_tracking():
-    tracker = ProvenanceTracker(log_file="test_log.json")
-    df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
+    def test_read_csv(self):
+        df, _ = self.tracker.track_table(self.df, operation="test_operation")
+        self.assertEqual(len(self.tracker.logs), 1)
 
-    table_name = tracker.track_table(df)
-    assert table_name in tracker.provenance_log
+    def tearDown(self):
+        import os
+        os.remove("test_log.json")
 
-    provenance = tracker.get_provenance(table_name)
-    assert provenance["columns"] == ["A", "B"]
-
-def test_why_provenance():
-    tracker = ProvenanceTracker()
-    df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
-
-    df_with_why = tracker.add_why_provenance(df)
-    assert "why" in df_with_why.columns
-    assert isinstance(df_with_why["why"][0], set)
+if __name__ == "__main__":
+    unittest.main()

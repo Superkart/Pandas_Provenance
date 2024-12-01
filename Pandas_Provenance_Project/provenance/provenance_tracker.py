@@ -1,48 +1,44 @@
+import pandas as pd
 import json
-from .table_utils import hash_table, generate_table_name
-
+from .table_utils import calculate_hash, generate_table_name
 
 class ProvenanceTracker:
     def __init__(self, log_file="provenance_log.json"):
         self.log_file = log_file
-        self.provenance_log = self._load_log()
+        self.logs = []
+        self.load_logs()
 
-    def _load_log(self):
-        """Loads the existing provenance log if it exists, otherwise initializes an empty log."""
+    def load_logs(self):
+        """Load existing logs from the JSON file."""
         try:
-            with open(self.log_file, "r") as file:
-                return json.load(file)
-        except FileNotFoundError:
-            return {}
+            with open(self.log_file, "r") as f:
+                self.logs = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            self.logs = []
 
-    def _save_log(self):
-        """Saves the current provenance log to a file."""
-        with open(self.log_file, "w") as file:
-            json.dump(self.provenance_log, file, indent=4)
+    def save_logs(self):
+        """Save logs to the JSON file."""
+        with open(self.log_file, "w") as f:
+            json.dump(self.logs, f, indent=4)
 
-    def track_table(self, dataframe, source_tables=None):
-        """Tracks a DataFrame, its source, and its metadata."""
-        table_name = generate_table_name(dataframe)
-        table_hash = hash_table(dataframe)
-
-        # Log the table provenance
-        self.provenance_log[table_name] = {
-            "source_tables": source_tables or [],
-            "columns": list(dataframe.columns),
-            "shape": dataframe.shape,
+    def track_table(self, df, source_file=None, operation=None, conditions=None):
+        """Track a DataFrame operation."""
+        table_hash = calculate_hash(df)
+        table_name = generate_table_name(table_hash)
+        entry = {
+            "table_name": table_name,
             "hash": table_hash,
+            "source_file": source_file,
+            "operation": operation,
+            "conditions": conditions,
+            "columns": list(df.columns),
+            "shape": df.shape
         }
+        self.logs.append(entry)
+        self.save_logs()
+        return df, table_name
 
-        self._save_log()
-        return table_name
-
-    def get_provenance(self, table_name):
-        """Returns the provenance for a given table."""
-        return self.provenance_log.get(table_name, "No provenance found.")
-
-    def add_why_provenance(self, dataframe, why_column_name="why"):
-        """Adds tuple-level why provenance to a DataFrame."""
-        dataframe[why_column_name] = dataframe.index.to_series().apply(
-            lambda idx: {f"Tuple-{idx}"}
-        )
-        return dataframe
+    def read_csv(self, filepath):
+        """Read a CSV file and track its provenance."""
+        df = pd.read_csv(filepath)
+        return self.track_table(df, source_file=filepath, operation="read_csv")

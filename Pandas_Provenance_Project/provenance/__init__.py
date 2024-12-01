@@ -1,4 +1,3 @@
+# provenance/__init__.py
 from .provenance_tracker import ProvenanceTracker
-from .table_utils import hash_table
-
-__all__ = ['ProvenanceTracker', 'hash_table']
+from .table_utils import calculate_hash, generate_table_name
