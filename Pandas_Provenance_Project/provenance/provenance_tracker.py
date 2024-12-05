@@ -69,6 +69,7 @@ class ProvenanceTracker:
             "type": operation,
             "input_to_output_mapping": [],
         }
+
         if operation in ["filter", "drop_columns", "selection"]:
             why_provenance["type"] = "single_table"
             why_provenance["input_to_output_mapping"] = {
@@ -81,8 +82,13 @@ class ProvenanceTracker:
                 "input_table_1": len(input_tables[0]) if input_tables else 0,
                 "input_table_2": len(input_tables[1]) if len(input_tables) > 1 else 0,
                 "output_rows": len(output_df),
+                "input_table_hashes": [
+                    calculate_hash(input_tables[0]),  # Calculate hash for the first input table
+                    calculate_hash(input_tables[1])   # Calculate hash for the second input table
+                ]
             }
         return why_provenance
+
 
     def read_csv(self, filepath):
         """Read a CSV file and track its provenance."""
