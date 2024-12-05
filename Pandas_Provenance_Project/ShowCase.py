@@ -6,8 +6,8 @@ def main():
     tracker = ProvenanceTracker(log_file="provenance/provenance_log.json")
 
     # Read the CSV file and track the provenance
-    df, table_name = tracker.read_csv("color_srgb.csv")
-    df2 = tracker.read_csv("industry.csv")
+    df, table_name = tracker.read_csv("Pandas_Provenance_Project/color_srgb.csv")
+    df2 = tracker.read_csv("Pandas_Provenance_Project/industry.csv")
 
 
     print(f"Table Name: {table_name}")
