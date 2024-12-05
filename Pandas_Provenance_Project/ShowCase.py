@@ -7,6 +7,9 @@ def main():
 
     # Read the CSV file and track the provenance
     df, table_name = tracker.read_csv("color_srgb.csv")
+    df2 = tracker.read_csv("industry.csv")
+
+
     print(f"Table Name: {table_name}")
     print(f"DataFrame:\n{df}\n")
 
