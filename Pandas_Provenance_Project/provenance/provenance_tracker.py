@@ -6,109 +6,128 @@ import pandas as pd
 
 class ProvenanceTracker:
     def __init__(self, log_file="provenance/provenance_log.json"):
-        # Get the absolute path for the log file
-        self.log_file = os.path.abspath(log_file)
-        self.logs = []
-        self.load_logs()
+        self.log_file_path = os.path.abspath(log_file)
+        self.provenance_entries = []
+        self._initialize_log_storage()
 
-    def load_logs(self):
-        """Load existing logs from the JSON file."""
-        log_dir = os.path.dirname(self.log_file)
+    def _initialize_log_storage(self):
+        log_directory = os.path.dirname(self.log_file_path)
         
-        # Ensure the directory exists, if not create it
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
+        os.makedirs(log_directory, exist_ok=True)
         
         try:
-            with open(self.log_file, "r") as f:
-                self.logs = json.load(f)
+            with open(self.log_file_path, "r") as log_file:
+                self.provenance_entries = json.load(log_file)
         except (FileNotFoundError, json.JSONDecodeError):
-            self.logs = []
-            # Create an empty log file if it doesn't exist
-            with open(self.log_file, "w"):
+            self.provenance_entries = []
+            with open(self.log_file_path, "w"):
                 pass
 
-    def save_logs(self):
-        """Save logs to the JSON file."""
-        log_dir = os.path.dirname(self.log_file)
+    def persist_provenance_log(self):
+        log_directory = os.path.dirname(self.log_file_path)
         
-        # Ensure the directory exists
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
+        os.makedirs(log_directory, exist_ok=True)
         
-        with open(self.log_file, "w") as f:
-            json.dump(self.logs, f, indent=4)
+        with open(self.log_file_path, "w") as log_file:
+            json.dump(self.provenance_entries, log_file, indent=4)
 
-    def track_table(self, df, source_file=None, operation=None, conditions=None, input_tables=None):
-        """Track a DataFrame operation."""
-        table_hash = calculate_hash(df)
-        table_name = generate_table_name(table_hash)
-        timestamp = datetime.now().isoformat()
+    def track_table_transformation(self, dataframe, source_file=None, transformation_type=None, transformation_details=None, input_dataframes=None):
+        table_identifier = calculate_hash(dataframe)
+        generated_table_name = generate_table_name(table_identifier)
+        transformation_timestamp = datetime.now().isoformat()
         
-        # Generate Why Provenance
-        why_provenance = self.generate_why_provenance(df, input_tables, operation, conditions)
+        transformation_rationale = self._extract_transformation_rationale(
+            dataframe, 
+            input_dataframes, 
+            transformation_type, 
+            transformation_details
+        )
 
-        entry = {
-            "table_name": table_name,
-            "hash": table_hash,
+        provenance_record = {
+            "table_name": generated_table_name,
+            "table_hash": table_identifier,
             "source_file": source_file,
-            "operation": operation,
-            "conditions": conditions,
-            "columns": list(df.columns),
-            "shape": df.shape,
-            "timestamp": timestamp,
-            "why_provenance": why_provenance,
+            "transformation_type": transformation_type,
+            "transformation_specifics": transformation_details,
+            "dataframe_columns": list(dataframe.columns),
+            "dataframe_dimensions": dataframe.shape,
+            "recorded_at": transformation_timestamp,
+            "transformation_rationale": transformation_rationale,
         }
-        self.logs.append(entry)
-        self.save_logs()
-        return df, table_name
+        
+        self.provenance_entries.append(provenance_record)
+        self.persist_provenance_log()
+        return dataframe, generated_table_name
 
-    def generate_why_provenance(self, output_df, input_tables, operation, conditions):
-        """Generate the Why Provenance based on the operation type."""
-        why_provenance = {
-            "type": operation,
-            "input_to_output_mapping": [],
+    def _extract_transformation_rationale(self, output_dataframe, input_dataframes, transformation_type, transformation_details):
+        transformation_context = {
+            "type": transformation_type,
+            "input_output_relationship": [],
         }
 
-        if operation in ["filter", "drop_columns", "selection"]:
-            why_provenance["type"] = "single_table"
-            why_provenance["input_to_output_mapping"] = {
-                "input_rows": list(range(len(input_tables[0]))) if input_tables else [],
-                "output_rows": list(range(len(output_df))),
+        if transformation_type in ["filter", "column_removal", "selection"]:
+            transformation_context["type"] = "single_dataframe_operation"
+            transformation_context["input_output_relationship"] = {
+                "input_row_indices": list(range(len(input_dataframes[0]))) if input_dataframes else [],
+                "output_row_indices": list(range(len(output_dataframe))),
             }
-        elif operation == "merge":
-            why_provenance["type"] = "multi_table"
-            why_provenance["input_to_output_mapping"] = {
-                "input_table_1": len(input_tables[0]) if input_tables else 0,
-                "input_table_2": len(input_tables[1]) if len(input_tables) > 1 else 0,
-                "output_rows": len(output_df),
-                "input_table_hashes": [
-                    calculate_hash(input_tables[0]),  # Calculate hash for the first input table
-                    calculate_hash(input_tables[1])   # Calculate hash for the second input table
+            transformation_context["applied_conditions"] = transformation_details
+
+            if transformation_type == "filter":
+                matching_row_indices = input_dataframes[0].query(transformation_details).index.tolist()
+                transformation_context["rows_satisfying_condition"] = matching_row_indices
+
+        elif transformation_type == "merge":
+            transformation_context["type"] = "multi_dataframe_operation"
+            transformation_context["input_output_relationship"] = {
+                "first_input_dataframe_rows": len(input_dataframes[0]) if input_dataframes else 0,
+                "second_input_dataframe_rows": len(input_dataframes[1]) if len(input_dataframes) > 1 else 0,
+                "output_rows": len(output_dataframe),
+                "input_dataframe_hashes": [
+                    calculate_hash(input_dataframes[0]),
+                    calculate_hash(input_dataframes[1])
                 ]
             }
-        return why_provenance
+            merged_row_indices = {
+                "first_dataframe_row_indices": input_dataframes[0].index.tolist(),
+                "second_dataframe_row_indices": input_dataframes[1].index.tolist(),
+            }
+            transformation_context["merged_row_indices"] = merged_row_indices
 
+            transformation_context["merged_columns"] = {
+                "first_dataframe_columns": input_dataframes[0].columns.tolist(),
+                "second_dataframe_columns": input_dataframes[1].columns.tolist(),
+            }
+
+        return transformation_context
 
     def read_csv(self, filepath):
-        """Read a CSV file and track its provenance."""
-        df = pd.read_csv(filepath)
-        return self.track_table(df, source_file=filepath, operation="read_csv")
+        dataframe = pd.read_csv(filepath)
+        return self.track_table_transformation(dataframe, source_file=filepath, transformation_type="read_csv")
 
     def filter(self, df, condition):
-        """Track a filter operation."""
-        df_filtered = df.query(condition)  # Apply filter
-        input_table_hash = [calculate_hash(df)]  # Get hash of input table
-        return self.track_table(df_filtered, operation="filter", conditions=condition, input_tables=[df])
+        filtered_dataframe = df.query(condition)
+        return self.track_table_transformation(
+            filtered_dataframe, 
+            transformation_type="filter", 
+            transformation_details=condition, 
+            input_dataframes=[df]
+        )
 
     def drop_columns(self, df, columns_to_drop):
-        """Track a column drop operation."""
-        df_dropped = df.drop(columns=columns_to_drop)
-        input_table_hash = [calculate_hash(df)]  # Get hash of input table
-        return self.track_table(df_dropped, operation="drop_columns", conditions=f"columns_to_drop: {columns_to_drop}", input_tables=[df])
+        dataframe_without_columns = df.drop(columns=columns_to_drop)
+        return self.track_table_transformation(
+            dataframe_without_columns, 
+            transformation_type="drop_columns", 
+            transformation_details=f"columns_to_drop: {columns_to_drop}", 
+            input_dataframes=[df]
+        )
 
     def merge(self, df1, df2, how="inner", on=None):
-        """Track a merge operation."""
-        df_merged = df1.merge(df2, how=how, on=on)
-        input_table_hashes = [calculate_hash(df1), calculate_hash(df2)]  # Add hashes of both tables
-        return self.track_table(df_merged, operation="merge", conditions=f"how: {how}, on: {on}", input_tables=[df1, df2])
+        merged_dataframe = df1.merge(df2, how=how, on=on)
+        return self.track_table_transformation(
+            merged_dataframe, 
+            transformation_type="merge", 
+            transformation_details=f"how: {how}, on: {on}", 
+            input_dataframes=[df1, df2]
+        )
