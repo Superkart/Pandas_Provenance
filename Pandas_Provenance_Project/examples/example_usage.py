@@ -1,12 +1,10 @@
 import sys
 import os
 import pandas as pd
-from src.Pandas_Provenance import ProvenanceTracker
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-
-
+from src.Pandas_Provenance import ProvenanceTracker
 
 tracker = ProvenanceTracker()
 
