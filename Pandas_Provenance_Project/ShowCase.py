@@ -3,7 +3,7 @@ from provenance.provenance_tracker import ProvenanceTracker
 
 def main():
 
-    tracker = ProvenanceTracker(log_file="provenance/provenance_log.json")
+    tracker = ProvenanceTracker(log_File="provenance/provenance_log.json")
 
     df, table_name = tracker.read_csv("Pandas_Provenance_Project/color_srgb.csv")
     df2 = tracker.read_csv("Pandas_Provenance_Project/industry.csv")
