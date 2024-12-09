@@ -2,6 +2,9 @@ import hashlib
 import pandas as pd
 
 def calculate_hash(dataframe):
+    if "why_provenance" in dataframe.columns:
+        dataframe = dataframe.drop(columns=["why_provenance"])
+
     hash_object = hashlib.sha256(pd.util.hash_pandas_object(dataframe).values)
     return hash_object.hexdigest()
 
