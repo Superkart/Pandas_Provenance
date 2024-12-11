@@ -8,6 +8,7 @@ class ProvenanceTracker:
     def __init__(self, log_file="provenance/provenance_log.json"):
         self.log_file_path = os.path.abspath(log_file)
         self.provenance_entries = []
+        self.session_dataframes = {}  # A dictionary to track session dataframes
         self.initialize_log_storage()
 
     def initialize_log_storage(self):
@@ -100,11 +101,27 @@ class ProvenanceTracker:
     def read_csv(self, filepath):
         dataframe = pd.read_csv(filepath)
         table_hash = calculate_hash(dataframe)
-        dataframe["why_provenance"] = dataframe.index.map(lambda idx: {frozenset({(table_hash, idx)})})
-        return self.track_table_transformation(dataframe, source_file=filepath, transformation_type="read_csv")
+        if "why_provenance" not in dataframe.columns:
+            dataframe["why_provenance"] = dataframe.index.map(lambda idx: {frozenset({(table_hash, idx)})})
+        
+        else:
+            dataframe["why_provenance"] = dataframe["why_provenance"].apply(lambda prov: prov | {frozenset({(table_hash, idx)}) for idx in dataframe.index})
+
+        self.session_dataframes[table_hash] = dataframe
+        return self.Track_Table_Transformation(dataframe, source_file=filepath, transformation_Type="read_csv")
 
     def filter(self, df, condition):
-        filtered_dataframe = df.query(condition)
+        
+        if "why_provenance" not in df.columns:
+            table_hash = calculate_hash(df)
+            df["why_provenance"] = df.index.map(lambda idx: {frozenset({(table_hash, idx)})})
+
+        filtered_dataframe = df.query(condition).copy()
+        filtered_dataframe["why_provenance"] = filtered_dataframe.index.map(lambda idx: df.loc[idx, "why_provenance"] if idx in df.index else set())
+
+        filtered_table_hash = calculate_hash(filtered_dataframe)
+        self.session_dataframes[filtered_table_hash] = filtered_dataframe
+        
         return self.track_table_transformation(
             filtered_dataframe, 
             transformation_type="filter", 
