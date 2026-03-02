@@ -22,7 +22,41 @@ class ProvenanceTracker:
         self.log_file_path = os.path.abspath(log_file)
         self.provenance_entries = []
         self.session_dataframes = {}  # Dictionary to track session dataframes
+        self.why_provenance_store = {}
         self.initialize_log_storage()
+
+    def _make_tuple_reference(self, table_hash, row_index):
+        return {
+            "table_hash": str(table_hash),
+            "row_index": int(row_index),
+        }
+
+    def _register_source_provenance(self, dataframe, table_hash):
+        row_provenance = {}
+        for row_index in dataframe.index.tolist():
+            row_provenance[str(row_index)] = {
+                "witness_sets": [[self._make_tuple_reference(table_hash, row_index)]],
+                "source": "read"
+            }
+        self.why_provenance_store[table_hash] = row_provenance
+
+    def _inherit_identity_provenance(self, output_dataframe, output_hash, input_dataframe, input_hash):
+        input_store = self.why_provenance_store.get(input_hash, {})
+        output_store = {}
+
+        for output_index in output_dataframe.index.tolist():
+            key = str(output_index)
+            inherited = input_store.get(key)
+
+            if inherited:
+                output_store[key] = inherited
+            else:
+                output_store[key] = {
+                    "witness_sets": [[self._make_tuple_reference(input_hash, output_index)]],
+                    "source": "identity"
+                }
+
+        self.why_provenance_store[output_hash] = output_store
 
     def initialize_log_storage(self):
         log_dir = os.path.dirname(self.log_file_path)
@@ -75,6 +109,7 @@ class ProvenanceTracker:
             "dataframe_dimensions": dataframe.shape,
             "recorded_at": transformation_timestamp,
             "transformation_rationale": transformation_rationale,
+            "why_provenance_rows": len(self.why_provenance_store.get(table_identifier, {})),
         }
         
         self.provenance_entries.append(provenance_record)
@@ -135,6 +170,7 @@ class ProvenanceTracker:
         dataframe = pd.read_csv(filepath)
         table_hash = calculate_hash(dataframe)
         self.session_dataframes[table_hash] = dataframe
+        self._register_source_provenance(dataframe, table_hash)
         
         return self.track_table_transformation(
             dataframe, 
@@ -153,8 +189,11 @@ class ProvenanceTracker:
             tuple: (filtered_dataframe, table_name)
         """
         filtered_dataframe = df.query(condition).copy()
+        filtered_dataframe = filtered_dataframe.reset_index(drop=True)
         filtered_table_hash = calculate_hash(filtered_dataframe)
+        input_hash = calculate_hash(df)
         self.session_dataframes[filtered_table_hash] = filtered_dataframe
+        self._inherit_identity_provenance(filtered_dataframe, filtered_table_hash, filtered_dataframe, input_hash)
         
         return self.track_table_transformation(
             filtered_dataframe, 
@@ -174,6 +213,9 @@ class ProvenanceTracker:
             tuple: (dataframe_without_columns, table_name)
         """
         dataframe_without_columns = df.drop(columns=columns_to_drop)
+        output_hash = calculate_hash(dataframe_without_columns)
+        input_hash = calculate_hash(df)
+        self._inherit_identity_provenance(dataframe_without_columns, output_hash, dataframe_without_columns, input_hash)
         return self.track_table_transformation(
             dataframe_without_columns, 
             transformation_type="drop_columns", 
@@ -194,9 +236,45 @@ class ProvenanceTracker:
             tuple: (merged_dataframe, table_name)
         """
         merged_dataframe = df1.merge(df2, how=how, on=on)
+        merged_hash = calculate_hash(merged_dataframe)
+        self.why_provenance_store[merged_hash] = {
+            str(idx): {
+                "witness_sets": [],
+                "source": "merge_pending_feature"
+            }
+            for idx in merged_dataframe.index.tolist()
+        }
         return self.track_table_transformation(
             merged_dataframe, 
             transformation_type="merge", 
             transformation_details=f"how: {how}, on: {on}", 
             input_dataframes=[df1, df2]
         )
+
+    def get_table_why_provenance(self, dataframe_or_hash):
+        """Get why-provenance mapping for a full table.
+
+        Args:
+            dataframe_or_hash (pd.DataFrame or str): DataFrame instance or table hash.
+
+        Returns:
+            dict: Mapping from output row index to witness sets.
+        """
+        if isinstance(dataframe_or_hash, pd.DataFrame):
+            table_hash = calculate_hash(dataframe_or_hash)
+        else:
+            table_hash = dataframe_or_hash
+        return self.why_provenance_store.get(table_hash, {})
+
+    def get_row_why_provenance(self, dataframe_or_hash, row_index):
+        """Get why-provenance witness sets for a specific output row.
+
+        Args:
+            dataframe_or_hash (pd.DataFrame or str): DataFrame instance or table hash.
+            row_index (int): Output row index.
+
+        Returns:
+            dict: Provenance details for the row or empty dict.
+        """
+        table_map = self.get_table_why_provenance(dataframe_or_hash)
+        return table_map.get(str(row_index), {})
