@@ -1,110 +1,126 @@
-# **Pandas Provenance Tracker**
+# Pandas Provenance Tracker
 
-## **Overview**
-The **Pandas Provenance Tracker** is a Python library designed to integrate provenance tracking into the pandas framework. This tool ensures transparency and reproducibility in data science by capturing metadata about the transformations performed on data during analysis. By logging key operations and their effects on the data, this project makes it easier to trace data lineage, verify data workflows, and reproduce results.
+Pandas Provenance Tracker is a Python library that adds provenance and lineage tracking to pandas workflows.
 
-## **Features**
-- **Automatic Provenance Logging**: Captures metadata (e.g., operation type, timestamp) for pandas operations like `filter()`, `merge()`, and `groupby()`.
-- **Tuple-Level Granularity**: Tracks data changes at the row level to ensure precise provenance.
-- **Seamless Integration**: Works directly with pandas, extending its functions to include provenance tracking.
-- **Efficient Log Storage**: Provenance logs are saved in structured formats like JSON for easy inspection and sharing.
-- **Reproducibility and Accountability**: Helps researchers and teams reproduce results and understand how data has been processed.
+It is designed for data science and analytics pipelines where reproducibility, explainability, and auditability matter.
 
-## **Installation**
+## Executive Summary
 
-To install **Pandas Provenance Tracker**, follow these steps:
+This project captures how output data is produced from input data by logging:
+- transformation metadata (operation type, timestamp, schema, dimensions),
+- stable table identifiers (hash-based),
+- row-level why-provenance witness sets.
 
-1. **Set up a virtual environment (optional but recommended):**
+The result is a traceable history of DataFrame transformations that helps teams debug pipelines, explain outcomes, and verify data processing logic.
 
-   If you'd like to use a virtual environment to isolate the project’s dependencies, you can create one as follows:
+## Key Capabilities
 
-   ```bash
-   python3 -m venv venv
+- Operation-level provenance logging to JSON
+- Table-level identity via deterministic hashing
+- Row-level why-provenance for:
+  - read_csv
+  - filter
+  - drop_columns
+  - merge
+- Query APIs to inspect provenance at table or row granularity
 
+## Why This Project Is Useful
 
-Activate the virtual environment:
+- Reproducibility: understand exactly how a result table was derived
+- Explainability: answer why a row exists in output
+- Auditing: maintain an inspectable transformation history
+- Debugging: identify unexpected lineage through complex joins and filters
 
-On Windows:
+## Architecture
 
-bash
-Copy code
-.\venv\Scripts\activate
-On macOS/Linux:
+Core components:
+- ProvenanceTracker: main API for tracked transformations
+- Hash utilities: deterministic table hashing and naming
+- Provenance store:
+  - persistent operation log (JSON)
+  - in-memory row-level why-provenance witness mapping
 
-bash
-Copy code
-source venv/bin/activate
-Install dependencies:
+High-level flow:
+1. Execute a tracked transformation
+2. Create/update row-level witness sets
+3. Persist operation metadata to provenance log
+4. Expose provenance through query APIs
 
-After activating the virtual environment, install the required dependencies using pip:
+## Current API (v0.1.0)
 
-bash
-Copy code
-pip install -r requirements.txt
-You can generate the requirements.txt file by running:
+Primary methods:
+- track_table_transformation
+- read_csv
+- filter
+- drop_columns
+- merge
+- get_table_why_provenance
+- get_row_why_provenance
 
-bash
-Copy code
-pip freeze > requirements.txt
-Requirements
-To run the Pandas Provenance Tracker, you will need the following libraries:
+## Why-Provenance Model
 
-pandas
-(list any other dependencies you are using)
-To install them, run:
+For each output row, provenance is represented as one or more witness sets.
 
-bash
-Copy code
-pip install -r requirements.txt
-Usage
-After installing the dependencies and setting up your environment, you can start using the tool. Here's a sample usage:
+Example structure:
 
-python
-Copy code
-import pandas as pd
-from pandas_provenance_tracker import filter_with_provenance
+```json
+{
+  "witness_sets": [
+    [
+      {"table_hash": "...", "row_index": 2},
+      {"table_hash": "...", "row_index": 0}
+    ]
+  ],
+  "source": "merge"
+}
+```
 
-# Load a sample dataframe
-df = pd.DataFrame({
-    'A': [1, 2, 3, 4],
-    'B': ['a', 'b', 'c', 'd']
-})
+Interpretation:
+- Each inner list is one sufficient witness set for producing the output row
+- For merge, a witness typically includes one contributing tuple from each side
 
-# Filter data with provenance tracking
-filtered_df = filter_with_provenance(df, 'A', lambda x: x > 2)
+## Setup and Run
 
-print(filtered_df)
-The filter_with_provenance function logs the operation and keeps track of which rows are affected, along with a timestamp and operation description.
+From repository root:
 
-System Architecture
-The Pandas Provenance Tracker operates by wrapping pandas operations and logging metadata in real-time. The system is composed of:
+```bash
+pip install -e .
+python Pandas_Provenance_Project/examples/example_usage.py
+```
 
-Data Operations Module: Handles pandas operations such as filtering and merging.
-Provenance Logger: Logs the metadata for each operation performed.
-Log Storage: Stores provenance information in structured formats (JSON).
-Example Workflow:
-A pandas operation (like merge()) is executed.
-The provenance tracker logs the operation details.
-The metadata is saved, and the transformed data is returned.
-Applications
-Research: Track and reproduce data transformations for research transparency.
-Data Auditing: Enable easy verification of data transformations in regulated industries.
-Collaboration: Facilitate collaboration by providing a clear record of how data has been manipulated.
-Challenges
-Performance: Handling large datasets efficiently while logging every transformation.
-Tuple-Level Granularity: Ensuring every row's change is captured without significantly impacting performance.
-Contributing
-Contributions to improve functionality, add more pandas operations, or optimize performance are welcome. To contribute:
+Git Bash with local virtual environment:
 
-Fork the repository.
-Create a new branch (git checkout -b feature-name).
-Commit your changes (git commit -am 'Add new feature').
-Push to the branch (git push origin feature-name).
-Submit a pull request.
-License
-This project is licensed under the MIT License - see the LICENSE file for details.
+```bash
+cd Pandas_Provenance_Project
+source venv/Scripts/activate
+python examples/example_usage.py
+```
 
-sql
-Copy code
+## Repository Structure
 
-This version includes proper **code blocks** for each command and Python code example for easy readability
+- Pandas_Provenance_Project/src/Pandas_Provenance/provenance_tracker.py
+- Pandas_Provenance_Project/src/Pandas_Provenance/table_utils.py
+- Pandas_Provenance_Project/examples/example_usage.py
+- provenance/provenance_log.json
+
+## Engineering Roadmap
+
+Planned next milestones:
+- groupby and aggregate why-provenance
+- broader pandas operation coverage
+- test suite expansion
+- packaging and release hardening
+
+## Tech Stack
+
+- Python
+- pandas
+- JSON-based provenance persistence
+
+## Contributing
+
+Contributions are welcome through issues and pull requests.
+
+## License
+
+MIT

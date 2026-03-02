@@ -1,13 +1,18 @@
 import os
 from setuptools import setup, find_packages
 
+README_PATH = "README.md"
+if os.path.exists(README_PATH):
+    with open(README_PATH, "r", encoding="utf-8") as readme_file:
+        LONG_DESCRIPTION = readme_file.read()
+else:
+    LONG_DESCRIPTION = ""
+
 setup(
     name="pandas-provenance",
     version="0.1.0",
     description="Track and trace data provenance for pandas DataFrames - log all transformations for reproducibility and auditability",
     author="Data Provenance Team",
-    author_email="support@pandas-provenance.dev",
-    url="https://github.com/yourusername/Pandas_Provenance",
     packages=find_packages(where="Pandas_Provenance_Project/src"),
     package_dir={"": "Pandas_Provenance_Project/src"},
     include_package_data=True,
@@ -16,7 +21,7 @@ setup(
         "pandas>=1.0.0",
         "numpy>=1.19.0",
     ],
-    long_description=open("README.md").read() if os.path.exists("README.md") else "",
+    long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
     classifiers=[
         "Programming Language :: Python :: 3",
