@@ -5,10 +5,23 @@ import pandas as pd
 from .table_utils import calculate_hash, generate_table_name
 
 class ProvenanceTracker:
+    """Tracks data provenance (lineage) for pandas DataFrames.
+    
+    Automatically logs all transformations applied to DataFrames, enabling
+    data lineage tracking, reproducibility, and auditability of data workflows.
+    Provenance logs are persisted to JSON for inspection and sharing.
+    """
+    
     def __init__(self, log_file="provenance/provenance_log.json"):
+        """Initialize ProvenanceTracker.
+        
+        Args:
+            log_file (str): Path to JSON file for storing provenance logs.
+                           Default: 'provenance/provenance_log.json'
+        """
         self.log_file_path = os.path.abspath(log_file)
         self.provenance_entries = []
-        self.session_dataframes = {}  # A dictionary to track session dataframes
+        self.session_dataframes = {}  # Dictionary to track session dataframes
         self.initialize_log_storage()
 
     def initialize_log_storage(self):
@@ -29,6 +42,18 @@ class ProvenanceTracker:
             json.dump(self.provenance_entries, log_file, indent=4)
 
     def track_table_transformation(self, dataframe, source_file=None, transformation_type=None, transformation_details=None, input_dataframes=None):
+        """Track and log a DataFrame transformation.
+        
+        Args:
+            dataframe (pd.DataFrame): The resulting DataFrame after transformation.
+            source_file (str, optional): Source file path (for read operations).
+            transformation_type (str, optional): Type of transformation (filter, merge, etc.).
+            transformation_details (str, optional): Details about the transformation.
+            input_dataframes (list, optional): List of input DataFrames involved in transformation.
+            
+        Returns:
+            tuple: (transformed_dataframe, table_name)
+        """
         table_identifier = calculate_hash(dataframe)
         generated_table_name = generate_table_name(table_identifier)
         transformation_timestamp = datetime.now().isoformat()
@@ -99,26 +124,35 @@ class ProvenanceTracker:
         return transformation_context
 
     def read_csv(self, filepath):
+        """Read a CSV file and track it as an initial data source.
+        
+        Args:
+            filepath (str): Path to the CSV file to read.
+            
+        Returns:
+            tuple: (dataframe, table_name)
+        """
         dataframe = pd.read_csv(filepath)
         table_hash = calculate_hash(dataframe)
-        if "why_provenance" not in dataframe.columns:
-            dataframe["why_provenance"] = dataframe.index.map(lambda idx: {frozenset({(table_hash, idx)})})
-        
-        else:
-            dataframe["why_provenance"] = dataframe["why_provenance"].apply(lambda prov: prov | {frozenset({(table_hash, idx)}) for idx in dataframe.index})
-
         self.session_dataframes[table_hash] = dataframe
-        return self.Track_Table_Transformation(dataframe, source_file=filepath, transformation_Type="read_csv")
+        
+        return self.track_table_transformation(
+            dataframe, 
+            source_file=filepath, 
+            transformation_type="read_csv"
+        )
 
     def filter(self, df, condition):
+        """Filter a DataFrame using a pandas query condition.
         
-        if "why_provenance" not in df.columns:
-            table_hash = calculate_hash(df)
-            df["why_provenance"] = df.index.map(lambda idx: {frozenset({(table_hash, idx)})})
-
+        Args:
+            df (pd.DataFrame): Input DataFrame to filter.
+            condition (str): Pandas query condition (e.g., 'A > 2').
+            
+        Returns:
+            tuple: (filtered_dataframe, table_name)
+        """
         filtered_dataframe = df.query(condition).copy()
-        filtered_dataframe["why_provenance"] = filtered_dataframe.index.map(lambda idx: df.loc[idx, "why_provenance"] if idx in df.index else set())
-
         filtered_table_hash = calculate_hash(filtered_dataframe)
         self.session_dataframes[filtered_table_hash] = filtered_dataframe
         
@@ -130,6 +164,15 @@ class ProvenanceTracker:
         )
 
     def drop_columns(self, df, columns_to_drop):
+        """Drop columns from a DataFrame.
+        
+        Args:
+            df (pd.DataFrame): Input DataFrame.
+            columns_to_drop (list): List of column names to drop.
+            
+        Returns:
+            tuple: (dataframe_without_columns, table_name)
+        """
         dataframe_without_columns = df.drop(columns=columns_to_drop)
         return self.track_table_transformation(
             dataframe_without_columns, 
@@ -139,6 +182,17 @@ class ProvenanceTracker:
         )
 
     def merge(self, df1, df2, how="inner", on=None):
+        """Merge two DataFrames.
+        
+        Args:
+            df1 (pd.DataFrame): First input DataFrame.
+            df2 (pd.DataFrame): Second input DataFrame.
+            how (str): Type of merge ('inner', 'outer', 'left', 'right'). Default: 'inner'
+            on (str or list, optional): Column(s) to join on.
+            
+        Returns:
+            tuple: (merged_dataframe, table_name)
+        """
         merged_dataframe = df1.merge(df2, how=how, on=on)
         return self.track_table_transformation(
             merged_dataframe, 
