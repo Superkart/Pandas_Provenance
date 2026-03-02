@@ -58,6 +58,28 @@ class ProvenanceTracker:
 
         self.why_provenance_store[output_hash] = output_store
 
+    def _get_row_witness_sets(self, table_hash, row_index):
+        table_store = self.why_provenance_store.get(table_hash, {})
+        row_store = table_store.get(str(row_index), {})
+        witness_sets = row_store.get("witness_sets", [])
+
+        if witness_sets:
+            return witness_sets
+
+        return [[self._make_tuple_reference(table_hash, row_index)]]
+
+    def _combine_witness_sets(self, left_witness_sets, right_witness_sets):
+        combined = []
+        for left_set in left_witness_sets:
+            for right_set in right_witness_sets:
+                combined.append(left_set + right_set)
+        return combined
+
+    def _merge_side_witness_sets(self, table_hash, row_index):
+        if pd.isna(row_index):
+            return [[]]
+        return self._get_row_witness_sets(table_hash, int(row_index))
+
     def initialize_log_storage(self):
         log_dir = os.path.dirname(self.log_file_path)
         os.makedirs(log_dir, exist_ok=True)
@@ -189,11 +211,10 @@ class ProvenanceTracker:
             tuple: (filtered_dataframe, table_name)
         """
         filtered_dataframe = df.query(condition).copy()
-        filtered_dataframe = filtered_dataframe.reset_index(drop=True)
         filtered_table_hash = calculate_hash(filtered_dataframe)
         input_hash = calculate_hash(df)
         self.session_dataframes[filtered_table_hash] = filtered_dataframe
-        self._inherit_identity_provenance(filtered_dataframe, filtered_table_hash, filtered_dataframe, input_hash)
+        self._inherit_identity_provenance(filtered_dataframe, filtered_table_hash, df, input_hash)
         
         return self.track_table_transformation(
             filtered_dataframe, 
@@ -215,7 +236,8 @@ class ProvenanceTracker:
         dataframe_without_columns = df.drop(columns=columns_to_drop)
         output_hash = calculate_hash(dataframe_without_columns)
         input_hash = calculate_hash(df)
-        self._inherit_identity_provenance(dataframe_without_columns, output_hash, dataframe_without_columns, input_hash)
+        self.session_dataframes[output_hash] = dataframe_without_columns
+        self._inherit_identity_provenance(dataframe_without_columns, output_hash, df, input_hash)
         return self.track_table_transformation(
             dataframe_without_columns, 
             transformation_type="drop_columns", 
@@ -235,15 +257,34 @@ class ProvenanceTracker:
         Returns:
             tuple: (merged_dataframe, table_name)
         """
-        merged_dataframe = df1.merge(df2, how=how, on=on)
+        left_hash = calculate_hash(df1)
+        right_hash = calculate_hash(df2)
+
+        left_tagged = df1.reset_index().rename(columns={"index": "__left_row_index"})
+        right_tagged = df2.reset_index().rename(columns={"index": "__right_row_index"})
+
+        merged_with_indices = left_tagged.merge(right_tagged, how=how, on=on)
+        merged_dataframe = merged_with_indices.drop(columns=["__left_row_index", "__right_row_index"]) 
+
         merged_hash = calculate_hash(merged_dataframe)
-        self.why_provenance_store[merged_hash] = {
-            str(idx): {
-                "witness_sets": [],
-                "source": "merge_pending_feature"
+        self.session_dataframes[merged_hash] = merged_dataframe
+
+        merged_store = {}
+        for output_row_index, merged_row in merged_with_indices.iterrows():
+            left_row_index = merged_row["__left_row_index"]
+            right_row_index = merged_row["__right_row_index"]
+
+            left_witness_sets = self._merge_side_witness_sets(left_hash, left_row_index)
+            right_witness_sets = self._merge_side_witness_sets(right_hash, right_row_index)
+            merged_witness_sets = self._combine_witness_sets(left_witness_sets, right_witness_sets)
+
+            merged_store[str(output_row_index)] = {
+                "witness_sets": merged_witness_sets,
+                "source": "merge"
             }
-            for idx in merged_dataframe.index.tolist()
-        }
+
+        self.why_provenance_store[merged_hash] = merged_store
+
         return self.track_table_transformation(
             merged_dataframe, 
             transformation_type="merge", 

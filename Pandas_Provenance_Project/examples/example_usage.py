@@ -28,4 +28,8 @@ merged_df, merge_table_name = tracker.merge(df_dropped, df2, on='A')
 print(f"\nMerged DataFrame: {merge_table_name}")
 print(merged_df)
 
+row_0_why = tracker.get_row_why_provenance(merged_df, 0)
+print("\nWhy-provenance for merged row 0:")
+print(row_0_why)
+
 print("\nProvenance log has been updated with all operations.")
