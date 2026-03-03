@@ -1,0 +1,37 @@
+4e3f54224eb519c26e9edeb41886a5ad1a575be0 | Superkart <karthik.ragi15@gmail.com> | 2024-12-11T23:55:26-06:00 | Readme changes
+9865157816e6ca6affa8e5d5e3e436f2b6bba922 | Superkart <karthik.ragi15@gmail.com> | 2024-12-11T23:50:06-06:00 | Fixed readme
+6879908d767e5dd4a1690c763cd511bc1fbfb422 | Superkart <karthik.ragi15@gmail.com> | 2024-12-11T16:13:12-06:00 | Minimal why provenance on readcsv, filter
+9cae9546e230489ef6a0aa1a2fe0ec6d6735858f | Superkart <karthik.ragi15@gmail.com> | 2024-12-11T15:34:29-06:00 | WIP on ProvLibrary: a628db9 Implemented the whyprovenance with extra column in the df
+7d0607a533cb5a1f105e525382bc446351e20636 | Superkart <karthik.ragi15@gmail.com> | 2024-12-11T15:34:29-06:00 | index on ProvLibrary: a628db9 Implemented the whyprovenance with extra column in the df
+a628db97c900afb5be84842548c0c5f22c2750f9 | Superkart <karthik.ragi15@gmail.com> | 2024-12-09T02:20:07-06:00 | Implemented the whyprovenance with extra column in the df
+4b5398f4bde51a9cd4e5fdec1cd4a7d2774f3562 | Superkart <karthik.ragi15@gmail.com> | 2024-12-09T01:43:20-06:00 | Organised the code base and made it more cleaner
+3b234cf5de2599c881bba66cc790480be4a6642f | Superkart <karthik.ragi15@gmail.com> | 2024-12-08T20:54:26-06:00 | Nomenclature changes
+c8df5f927334cfaacbf29abfd728b2509358b88f | Superkart <karthik.ragi15@gmail.com> | 2024-12-05T16:12:56-06:00 | Code changes
+96e056f8020f9f433d289b6d6bfb97b0aaaeaf92 | Superkart <karthik.ragi15@gmail.com> | 2024-12-05T15:26:31-06:00 | Fixed code
+4cbcb2659c2a075e2cf2081aac59b831671d48de | Superkart <karthik.ragi15@gmail.com> | 2024-12-05T14:58:54-06:00 | Fixed code
+fdac531c203bce0c650530d3469e3117fbe3e4ee | Superkart <karthik.ragi15@gmail.com> | 2024-12-05T04:40:25-06:00 | Fixed the relative path in showcase
+68e116cf18f3adab0145b3b4cb42a4426f8ec813 | Superkart <karthik.ragi15@gmail.com> | 2024-12-05T04:15:44-06:00 | Added 2 new csvs and made changes to the showcase.py
+4ae72805ee451ce126be277e9aa091f739575d29 | Superkart <karthik.ragi15@gmail.com> | 2024-12-05T03:51:01-06:00 | Fixed hash storing names
+d598b585bae65813085d0ec6e7bafbfc8be53d23 | Superkart <karthik.ragi15@gmail.com> | 2024-12-05T03:42:45-06:00 | Fixed the paths and ran with hashes
+2cc4450bf920ab0b34953c33cd12b436f7d275e1 | Superkart <karthik.ragi15@gmail.com> | 2024-12-05T02:14:47-06:00 | File to showcase the provenance on the csv
+796903d79b364fcc3e14eb603b5ce87ab4387f34 | Superkart <karthik.ragi15@gmail.com> | 2024-12-03T12:52:54-06:00 | Included some kind of why provenance, and included timestamps
+dc9112cf2f90407e25e43fd6593b077db5b610fb | Superkart <karthik.ragi15@gmail.com> | 2024-12-01T00:45:02-06:00 | made changes and tested need to do why provenance and get the origin of the changes
+04dd4f31919bd696696af9c88c6f0e32ab62de62 | Superkart <karthik.ragi15@gmail.com> | 2024-11-30T21:12:25-06:00 | Made changes to files added csv.
+91cdce417b61590a84108bf00a167a7585ecbd85 | Superkart <karthik.ragi15@gmail.com> | 2024-11-30T18:12:42-06:00 | Made changes to all the code files
+a4af60114e5385a5170a47d95fe9dd259e8dc490 | Superkart <karthik.ragi15@gmail.com> | 2024-11-26T13:45:10-06:00 | Added files to run the tests for the provenance libraries
+5de1614ab7cc4e3da8dba4d54d06c70af93053ba | Superkart <karthik.ragi15@gmail.com> | 2024-11-26T13:19:21-06:00 | Added the provenance files required to build the system. They are all .py fils. Need to add the remaining files
+bb41836c5e98ce30feab34419b91616b19a67371 | Superkart <karthik.ragi15@gmail.com> | 2024-11-25T15:10:29-06:00 | Added a new file called provenance_tracker
+898519660f867596bd3a996696e1b0d9cf799535 | Superkart <karthik.ragi15@gmail.com> | 2024-11-25T14:47:25-06:00 | removed the requirements.txt file from being ignored in the gitignore
+6051d994056e20929df47d4f360cd85419285e96 | Superkart <karthik.ragi15@gmail.com> | 2024-11-25T14:39:52-06:00 | Made changes to the gitignore to work with a more local workflow of this project
+279ca32038b7583081c407499181f84ac0b32d6d | Superkart <51130523+Superkart@users.noreply.github.com> | 2024-11-21T17:40:54-06:00 | Made changes
+a572e6f98a1156709e2e39dde7fa3d71fbd763ff | Superkart <51130523+Superkart@users.noreply.github.com> | 2024-11-21T03:34:47-06:00 | Made Changes But running into error
+95bd78a1b680ae69d89a3f554704b09dc37ab548 | Superkart <51130523+Superkart@users.noreply.github.com> | 2024-11-20T15:43:55-06:00 | Made few changes to the notebook.
+c5cb47fbb12d37e9b9d7a75faa62e48459f257a6 | Superkart <51130523+Superkart@users.noreply.github.com> | 2024-11-14T12:05:30-06:00 | Added the read_csv with prov method
+92bc0def34069e25d983d804fec17b57f94e2e9f | Superkart <51130523+Superkart@users.noreply.github.com> | 2024-11-14T11:58:27-06:00 | I changed the support methods and added a new method to check and create a prov table if it doesn't exist. Also the system now maintains a prov table instead of just a list of logs.
+3dad911b920c06f305a35d25cf31330d622502bb | Superkart <51130523+Superkart@users.noreply.github.com> | 2024-11-07T13:55:21-06:00 | Wrote a method to override the readcsv method and removed reduced the granularity
+f2fc932a71c9ca2bf96631997178fd7c7e72d672 | Superkart <51130523+Superkart@users.noreply.github.com> | 2024-11-07T13:15:23-06:00 | Mounted the Drive, Imported more required libraries, Accessed a table or csv from the drive folder. Added the support Functions to create the provenance system.
+8be5f6a5de924a8ef9acc2955a2fc42e58a617e7 | Superkart <51130523+Superkart@users.noreply.github.com> | 2024-11-06T14:23:27-06:00 | Added the purpose of this project and also added the main imports for this project
+934533a5cc99b4d21005adff11e6f6470032c07c | Superkart <51130523+Superkart@users.noreply.github.com> | 2024-11-05T13:00:53-06:00 | Created using Colab
+786a6f5cebb94b02ced524adb4a4db156e786968 | Superkart <karthik.ragi15@gmail.com> | 2024-11-05T12:59:53-06:00 | Added the ignore provenance logss to the .gitignore
+b8f6c4de36848bd6eda0bed96ea6e014e21c739b | Superkart <karthik.ragi15@gmail.com> | 2024-11-05T12:57:31-06:00 | Made changes to the readme
+1cd0972ec35463567d0d7f658598033c7078ae92 | Superkart <51130523+Superkart@users.noreply.github.com> | 2024-11-05T12:55:28-06:00 | Initial commit

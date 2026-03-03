@@ -1,21 +1,126 @@
-# Pandas_Provenance
-# Pandas Provenance Tracker  ## Description This project enables manual provenance tracking for data transformations in the pandas library. It logs operations like filtering and joins, helping users trace data changes at each step. Provenance tracking supports transparency, reproducibility, and accountability in data workflows.
 # Pandas Provenance Tracker
 
-## Description
-This project implements manual provenance tracking for data transformations in the pandas library. It provides functions to log details of various data operations, such as filtering, aggregation, and joins, allowing users to trace the evolution of their data through each step of analysis. This provenance tracking helps ensure transparency, reproducibility, and accountability in data workflows, particularly in complex data science and machine learning projects.
+Pandas Provenance Tracker is a Python library that adds provenance and lineage tracking to pandas workflows.
 
-## Key Features
-- **Provenance Logs**: Automatically captures metadata for each data manipulation, including timestamps, descriptions of actions, and summaries of input/output data.
-- **Wrapper Functions for Pandas**: Functions like `filter_with_provenance` and others are designed to seamlessly wrap around standard pandas operations, tracking provenance without changing workflows.
-- **JSON Provenance Log**: Logs are saved in a JSON file, making it easy to read, analyze, and share information about data transformations.
+It is designed for data science and analytics pipelines where reproducibility, explainability, and auditability matter.
 
-## Use Cases
-- **Data Provenance in Research**: Ensures each step of data processing is traceable, making it suitable for academic and research projects.
-- **Debugging and Reproducibility**: Helps users understand the data pipeline and aids in debugging or recreating analyses.
-- **Collaborative Data Projects**: Allows team members to track and verify data transformations collaboratively.
+## Executive Summary
 
-## Getting Started
-1. Clone the repository and install necessary dependencies.
-2. Import `pandas_provenance` and begin using provenance-tracked operations with ease in any data analysis project.
-3. Save and examine the provenance log to see a step-by-step record of your data manipulations.
+This project captures how output data is produced from input data by logging:
+- transformation metadata (operation type, timestamp, schema, dimensions),
+- stable table identifiers (hash-based),
+- row-level why-provenance witness sets.
+
+The result is a traceable history of DataFrame transformations that helps teams debug pipelines, explain outcomes, and verify data processing logic.
+
+## Key Capabilities
+
+- Operation-level provenance logging to JSON
+- Table-level identity via deterministic hashing
+- Row-level why-provenance for:
+  - read_csv
+  - filter
+  - drop_columns
+  - merge
+- Query APIs to inspect provenance at table or row granularity
+
+## Why This Project Is Useful
+
+- Reproducibility: understand exactly how a result table was derived
+- Explainability: answer why a row exists in output
+- Auditing: maintain an inspectable transformation history
+- Debugging: identify unexpected lineage through complex joins and filters
+
+## Architecture
+
+Core components:
+- ProvenanceTracker: main API for tracked transformations
+- Hash utilities: deterministic table hashing and naming
+- Provenance store:
+  - persistent operation log (JSON)
+  - in-memory row-level why-provenance witness mapping
+
+High-level flow:
+1. Execute a tracked transformation
+2. Create/update row-level witness sets
+3. Persist operation metadata to provenance log
+4. Expose provenance through query APIs
+
+## Current API (v0.1.0)
+
+Primary methods:
+- track_table_transformation
+- read_csv
+- filter
+- drop_columns
+- merge
+- get_table_why_provenance
+- get_row_why_provenance
+
+## Why-Provenance Model
+
+For each output row, provenance is represented as one or more witness sets.
+
+Example structure:
+
+```json
+{
+  "witness_sets": [
+    [
+      {"table_hash": "...", "row_index": 2},
+      {"table_hash": "...", "row_index": 0}
+    ]
+  ],
+  "source": "merge"
+}
+```
+
+Interpretation:
+- Each inner list is one sufficient witness set for producing the output row
+- For merge, a witness typically includes one contributing tuple from each side
+
+## Setup and Run
+
+From repository root:
+
+```bash
+pip install -e .
+python Pandas_Provenance_Project/examples/example_usage.py
+```
+
+Git Bash with local virtual environment:
+
+```bash
+cd Pandas_Provenance_Project
+source venv/Scripts/activate
+python examples/example_usage.py
+```
+
+## Repository Structure
+
+- Pandas_Provenance_Project/src/Pandas_Provenance/provenance_tracker.py
+- Pandas_Provenance_Project/src/Pandas_Provenance/table_utils.py
+- Pandas_Provenance_Project/examples/example_usage.py
+- provenance/provenance_log.json
+
+## Engineering Roadmap
+
+Planned next milestones:
+- groupby and aggregate why-provenance
+- broader pandas operation coverage
+- test suite expansion
+- packaging and release hardening
+
+## Tech Stack
+
+- Python
+- pandas
+- JSON-based provenance persistence
+
+## Contributing
+
+Contributions are welcome through issues and pull requests.
+
+## License
+
+MIT
