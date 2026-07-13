@@ -157,6 +157,8 @@ Planned next milestones:
 
 ## Release & Distribution
 
+Detailed guidebook: `/home/runner/work/Pandas_Provenance/Pandas_Provenance/docs/publishing_guide.md`
+
 Current public release process:
 1. Merge feature branch into `main`
 2. Build: `python -m build`
